@@ -40,7 +40,6 @@ crc_poly_ccit = shift 0 2 >>>
 
 (for comparison: Matthias' implementation with Haskell-Arrows works as follows: 
 ```
-crc_polynom_ccit : Vec Bool 5 -> Vec Bool 4 
 crc_polynom_ccit 
     =   mvRight >:> mvRight >:>
         (   aAssoc 
