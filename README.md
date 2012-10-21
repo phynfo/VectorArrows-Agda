@@ -46,7 +46,7 @@ crc_polynom_ccit
         (   aAssoc 
         >>> (aXor *** aXor)
         )
-``
+```
 ... and the same expressed via the proc-notation: 
 ```haskell
 crc_polynom_ccit 
