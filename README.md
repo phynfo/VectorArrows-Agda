@@ -39,23 +39,23 @@ crc_poly_ccit = shift 0 2 >>>
 ```
 
 (for comparison: Matthias' implementation with Haskell-Arrows works as follows: 
-``
---crc_polynom_ccit : Vec Bool 5 -> Vec Bool 4 
---crc_polynom_ccit 
---    =   mvRight >:> mvRight >:>
---        (   aAssoc 
---        >>> (aXor *** aXor)
---        )
+```
+crc_polynom_ccit : Vec Bool 5 -> Vec Bool 4 
+crc_polynom_ccit 
+    =   mvRight >:> mvRight >:>
+        (   aAssoc 
+        >>> (aXor *** aXor)
+        )
 ``
 ... or with the proc-notation: 
 ``
--- crc_polynom_ccit 
---  = proc (x4, (x3, (x2, (x1, x0)))) -> do
---      o1 <- aXor -< (x4, x0)
---      o2 <- aXor -< (x4, x1)
---      o3 <- aId  -< (x2)
---      o4 <- aId  -< (x3)
---      returnA    -< (o4, (o3, (o2, o1)))
-``
+crc_polynom_ccit 
+   = proc (x4, (x3, (x2, (x1, x0)))) -> do
+        o1 <- aXor -< (x4, x0)
+        o2 <- aXor -< (x4, x1)
+        o3 <- aId  -< (x2)
+        o4 <- aId  -< (x3)
+        returnA    -< (o4, (o3, (o2, o1)))
+```
 
 
