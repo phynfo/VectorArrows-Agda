@@ -1,4 +1,4 @@
-module MyVec where
+module VectorArrow where
 
 data Bool : Set where
   true : Bool
@@ -16,12 +16,17 @@ _+_ : Nat -> Nat -> Nat
 zero + j  = j
 suc i + j = suc (i + j)
 
+_*_ : Nat -> Nat -> Nat
+zero * j = zero
+suc i * j = j + (i * j)
+
 infixl 6 _+_
+infixl 7 _*_
 
 {-# BUILTIN NATPLUS _+_ #-}
 
-data _*_ (A B : Set) : Set where 
-  _,_  : A -> B -> A * B
+data _x_ (A B : Set) : Set where 
+  _,_  : A -> B -> A x B
 
 data Vec (A : Set) : Nat -> Set where 
   []   : Vec A zero
@@ -33,7 +38,7 @@ _++_ : {A : Set}{n m : Nat} -> Vec A n -> Vec A m -> Vec A (n + m)
 [] ++ ys        = ys
 (x :: xs) ++ ys = x :: (xs ++ ys)
 
-split : {A : Set}{m n : Nat} -> Vec A (n + m) -> (Vec A n) * (Vec A m) 
+split : {A : Set}{m n : Nat} -> Vec A (n + m) -> (Vec A n) x (Vec A m) 
 split {_} {_} {zero}  xs        = ( [] , xs )
 split {_} {_} {suc _} (x :: xs) with split xs 
 ... | ( ys , zs ) = ( (x :: ys) , zs )
@@ -55,17 +60,22 @@ drop : {A : Set} {m : Nat} -> (n : Nat) -> Vec A (n + m) -> Vec A m
 drop zero    xs        = xs
 drop (suc i) (x :: xs) = drop i xs
 
+concat : {A : Set}{n m : Nat} -> Vec (Vec A n) m -> Vec A (m * n)
+concat [] = []
+concat (xs :: xss) = xs ++ (concat xss)
+
+
 swap : {A : Set} {m n : Nat} -> Vec A (n + m) -> Vec A (m + n)
 swap {_} {_} {n} xs = drop n xs ++ take n xs
 
 -- yields same result as split BUT calculates it from the back
--- splitM : {A : Set}{m n : Nat} -> Vec A (n + m) -> (Vec A m) * (Vec A n) 
+-- splitM : {A : Set}{m n : Nat} -> Vec A (n + m) -> (Vec A m) x (Vec A n) 
 -- splitM {_} {zero} {_}  xs       = ( [] , xs )
 -- splitM {_} {suc _} {_} xs with splitM (heads xs) 
 -- ... | ( ys , zs ) = ( last xs :: ys , zs )
 
-_o_ : {A C : Set}{B : A -> Set}{C : (x : A) -> (B x) -> Set} -> (f : {x : A}(y : B x) -> C x y) -> (g : (x : A) -> B x) -> (x : A) -> C x (g x) 
-_o_ f g x = f (g x)
+--_o_ : {A C : Set}{B : A -> Set}{C : (x : A) -> (B x) -> Set} -> (f : {x : A}(y : B x) -> C x y) -> (g : (x : A) -> B x) -> (x : A) -> C x (g x) 
+--_o_ f g x = f (g x)
 
 _o1_ : {A C : Set}{B : A -> Set} -> ({x : A} -> B x -> C) -> ( (x : A) -> B x) -> (A -> C)
 _o1_ f g x = f (g x)
@@ -128,10 +138,8 @@ dup : {A : Set}{n : Nat} -> (i : Nat) -> Vec A (1 + i + n) -> Vec A (2 + i + n)
 dup zero (x :: xs) = x :: x :: xs
 dup (suc i) (x :: xs) = x :: (dup i xs)
 
-test : Vec Bool 5 -> Vec Bool 4
-test = firsts xorV >>> swap {_} {_} {2}
 
-
+ 
 crc_poly_ccit : Vec Bool 5 -> Vec Bool 4
 crc_poly_ccit = shift 0 2 >>> 
                 dup 2     >>> 
@@ -162,5 +170,13 @@ crc_poly_ccit1 = shift 0 2 >>>
 --      o3 <- aId  -< (x2)
 --      o4 <- aId  -< (x3)
 --      returnA    -< (o4, (o3, (o2, o1)))
+
+----------------- A Universe for Arrows!? --------------------
+
+data _-->_ (A B : Set) : Set where
+
+  
+
+
 
 
