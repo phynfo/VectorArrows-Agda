@@ -182,12 +182,12 @@ crc_poly_ccit1 = shift 0 2 >>>
 
 record VArrow (_~~>_ : Set → Set → Set) : Set₁ where 
   field
-    arr : ∀ {B n m}           → (Vec B n → Vec B m) → (Vec B n) ~~> (Vec B m)
-    fsts : ∀ {B n m k}        → (Vec B n) ~~> (Vec B m) → (Vec B (n + k)) ~~> (Vec B (m + k))    
-    snds : ∀ {B n m}(k : ℕ) → (Vec B n) ~~> (Vec B m) → (Vec B (k + n)) ~~> (Vec B (k + m)) 
-    _⋙_ : ∀ {B n m k}        → (Vec B n) ~~> (Vec B m) → (Vec B m) ~~> (Vec B k) →       (Vec B n) ~~> (Vec B k)
-    _*₃_ : ∀ {B n m k j}      → (Vec B n) ~~> (Vec B m) → (Vec B k) ~~> (Vec B j) → (Vec B (n + k)) ~~> (Vec B (m + j))
-    _&₃_ : ∀ {B n m k}        → (Vec B n) ~~> (Vec B m) → (Vec B n) ~~> (Vec B k) →       (Vec B n) ~~> (Vec B (m + k)) 
+    arr : ∀ {B n m}         → (Vec B n → Vec B m) → (Vec B n) ~~> (Vec B m)
+    fsts : ∀ {B n m k}      → Vec B n ~~> Vec B m → Vec B (n + k) ~~> Vec B (m + k)    
+    snds : ∀ {B n m}(k : ℕ) → Vec B n ~~> Vec B m → Vec B (k + n) ~~> Vec B (k + m) 
+    _⋙_ : ∀ {B n m k}      → Vec B n ~~> Vec B m → Vec B m ~~> Vec B k → Vec B n ~~> Vec B k
+    _*₃_ : ∀ {B n m k j}    → Vec B n ~~> Vec B m → Vec B k ~~> Vec B j → Vec B (n + k) ~~> Vec B (m + j)
+    _&₃_ : ∀ {B n m k}      → Vec B n ~~> Vec B m → Vec B n ~~> Vec B k → Vec B n ~~> Vec B (m + k) 
 
 
 -- arrL : ∀ {B n m} → (Vec B n → Vec B m) → List (Vec B n) → List (Vec B m)
@@ -195,9 +195,23 @@ arrL : ∀ {B n m} → (Vec B n → Vec B m) → Vec B n ⇒S⇒ Vec B m
 arrL f = map f
 
 -- fstsL : ∀ {B n m k} → (List (Vec B n) → List (Vec B m)) → List (Vec B (n + k)) → List (Vec B (m + k))
-fstsL : ∀ {B n m k} → (Vec B n) ⇒S⇒ (Vec B m) → Vec B (n + k) ⇒S⇒ Vec B (m + k)
+fstsL : ∀ {B n m k} → Vec B n ⇒S⇒ Vec B m → Vec B (n + k) ⇒S⇒ Vec B (m + k)
 fstsL f xs = zipWith _++_ (f (map fst xsSplit)) (map snd xsSplit)
    where xsSplit = map split xs
+
+sndsL : ∀ {B n m}(k : ℕ) → Vec B n ⇒S⇒ Vec B m → Vec B (k + n) ⇒S⇒ Vec B (k + m)
+sndsL k f xs = zipWith _++_  (map fst xsSplit) (f (map snd xsSplit))
+   where xsSplit = map ( split {_} {_} {k} ) xs 
+
+_>>>L_ : ∀ {B n m k} → Vec B n ⇒S⇒ Vec B m → Vec B m ⇒S⇒ Vec B k → Vec B n ⇒S⇒ Vec B k
+_>>>L_ f g xs = g (f xs)
+
+_***L_ : ∀ {B n m k j} → Vec B n ⇒S⇒ Vec B m → Vec B k ⇒S⇒ Vec B j → Vec B (n + k) ⇒S⇒ Vec B (m + j)
+_***L_ f g xs = zipWith _++_ (f (map fst xsSplit)) (g (map snd xsSplit))
+   where xsSplit = map split xs
+
+_&&&L_ : ∀ {B n m k} → Vec B n ⇒S⇒ Vec B m → Vec B n ⇒S⇒ Vec B k → Vec B n ⇒S⇒ Vec B (m + k)
+_&&&L_ f g xs = zipWith _++_ (f xs) (g xs)
 
 fnArrow : VArrow _=>_
 fnArrow = record 
@@ -209,6 +223,18 @@ fnArrow = record
   ; _&₃_ = _&&&_ 
   }
 
+strArrow : VArrow _⇒S⇒_
+strArrow = record
+  { arr = arrL
+  ; fsts = fstsL
+  ; snds = sndsL
+  ; _⋙_ = _>>>L_
+  ; _*₃_ = _***L_
+  ; _&₃_ = _&&&L_
+  } 
+
 data Type : Set where
   fun    : Type
   stream : Type
+
+-- Und jetzt??? 
