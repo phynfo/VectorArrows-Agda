@@ -224,6 +224,15 @@ El : Type → Set → Set → Set
 El fun    = _=>_
 El stream = _⇒S⇒_
 
+test : ∀ { _~~>_ } -> (VArrow _~~>_) → (Vec Bool 2) ~~> (Vec Bool 1)
+test arrow = arr xorV
+  where open VArrow arrow
 
 
--- Und jetzt??? 
+-- crc_poly_ccit₁ : ∀ {_~~>_} -> (VArrow _~~>_) → Vec Bool 5 ~~> Vec Bool 4
+-- crc_poly_ccit₁ arrow = arr (shift 0 2) ⋙ 
+--                       arr (dup 2)     ⋙ 
+--                       shift 3 1 >>> 
+--                       seconds 2 (xorV *** 
+--                       xorV
+--                          )
