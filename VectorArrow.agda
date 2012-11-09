@@ -172,6 +172,7 @@ record VArrow (_~~>_ : Set → Set → Set) : Set₁ where
     _⋙_ : ∀ {B n m k}      → Vec B n ~~> Vec B m → Vec B m ~~> Vec B k → Vec B n ~~> Vec B k
     _*₃_ : ∀ {B n m k j}    → Vec B n ~~> Vec B m → Vec B k ~~> Vec B j → Vec B (n + k) ~~> Vec B (m + j)
     _&₃_ : ∀ {B n m k}      → Vec B n ~~> Vec B m → Vec B n ~~> Vec B k → Vec B n ~~> Vec B (m + k) 
+  infixr 2 _⋙_
 
 
 -- The Stream-Arrow Combinators
@@ -224,15 +225,14 @@ El : Type → Set → Set → Set
 El fun    = _=>_
 El stream = _⇒S⇒_
 
-test : ∀ { _~~>_ } -> (VArrow _~~>_) → (Vec Bool 2) ~~> (Vec Bool 1)
-test arrow = arr xorV
+xorVA : ∀ { _~~>_ } -> (VArrow _~~>_) → (Vec Bool 2) ~~> (Vec Bool 1)
+xorVA arrow = arr xorV
   where open VArrow arrow
 
-
--- crc_poly_ccit₁ : ∀ {_~~>_} -> (VArrow _~~>_) → Vec Bool 5 ~~> Vec Bool 4
--- crc_poly_ccit₁ arrow = arr (shift 0 2) ⋙ 
---                       arr (dup 2)     ⋙ 
---                       shift 3 1 >>> 
---                       seconds 2 (xorV *** 
---                       xorV
---                          )
+-- But: Its not really polymorph, is it?
+crc_poly_ccit₁ : ∀ {_~~>_} -> (VArrow _~~>_) → Vec Bool 5 ~~> Vec Bool 4
+crc_poly_ccit₁ arrow =  arr (shift 0 2) 
+                     ⋙ arr (dup 2) 
+                     ⋙ arr (shift 3 1) 
+                     ⋙ snds 2 (arr xorV *₃ arr xorV)
+   where open VArrow arrow
