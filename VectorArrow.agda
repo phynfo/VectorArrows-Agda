@@ -1,7 +1,27 @@
 module VectorArrow where
 
 open import Data.List using (List; _∷_; map; zipWith)
-open import Data.Nat using (ℕ; zero; suc;  _+_; _*_)
+open import Data.Nat using (ℕ; zero; suc;  _+_; _*_) 
+
+data _==_ {A : Set}(x : A) : A → Set where 
+  refl : x == x
+
+lem-plus-zero : (n : ℕ) → (n + zero) == n
+lem-plus-zero zero = refl
+lem-plus-zero (suc n) with n + zero | lem-plus-zero n
+... | .n | refl = refl
+
+lem-help : (n m : ℕ) → (suc n + m) == (n + suc m)
+lem-help zero m = refl
+lem-help (suc n) m with suc n + m |  lem-help n m 
+... | .n + suc .m | refl = {!!}
+
+lem-plus-assoc : (n m : ℕ) → (n + m) == (m + n)
+lem-plus-assoc n zero with n + zero | lem-plus-zero n 
+... | .n | refl =  refl
+lem-plus-assoc n (suc m) = {!!}
+
+-- z.Z. suc m + n == suc (m + n) == (IH) suc (n + m) == n + suc m
 
 data Bool : Set where
   true : Bool
@@ -236,3 +256,5 @@ crc_poly_ccit₁ arrow =  arr (shift 0 2)
                      ⋙ arr (shift 3 1) 
                      ⋙ snds 2 (arr xorV *₃ arr xorV)
    where open VArrow arrow
+
+
