@@ -14,14 +14,15 @@ lem-plus-zero (suc n) with n + zero | lem-plus-zero n
 lem-help : (n m : ℕ) → (suc n + m) == (n + suc m)
 lem-help zero m = refl
 lem-help (suc n) m with suc n + m |  lem-help n m 
-... | .n + suc .m | refl = {!!}
+... | .(n + suc m) | refl = refl
 
 lem-plus-assoc : (n m : ℕ) → (n + m) == (m + n)
 lem-plus-assoc n zero with n + zero | lem-plus-zero n 
 ... | .n | refl =  refl
-lem-plus-assoc n (suc m) = {!!}
+lem-plus-assoc n (suc m) with n + suc m    | lem-help n m | m + n    | lem-plus-assoc n m 
+...                        | . (suc n + m) | refl         | .(n + m) | refl               = refl
 
--- z.Z. suc m + n == suc (m + n) == (IH) suc (n + m) == n + suc m
+-- n + suc m == suc n + m == (_+_) suc (n + m) == (IH) suc (m + n) == (_+_) suc m + n
 
 data Bool : Set where
   true : Bool
@@ -104,6 +105,14 @@ A ⇒S⇒ B = List A → List B
 seconds : ∀ {A n m} (k : ℕ) → (Vec A n => Vec A m) → Vec A (k + n) => Vec A (k + m)
 seconds k f xs with split {_} {_} {k} xs
 ... | ( ys , zs ) = ys ++ (f zs)
+
+-- seconds2 : ∀ {A n m k} → (Vec A n → Vec A m) → Vec A (k + n) → Vec A (k + m)
+-- seconds2 {A} {n} {m} {k} f xs with 
+
+reverseV : ∀ {A n} → Vec A n → Vec A n
+reverseV [] = []
+reverseV {A} {suc n} (x ∷ xs) with (n + suc zero) | lem-plus-assoc n (suc zero) 
+... | .(suc zero + n) | refl = {!!}
 
 firsts : ∀ {A n m k} → (Vec A n => Vec A m) → Vec A (n + k) => Vec A (m + k)
 firsts f xs with split xs
@@ -249,7 +258,7 @@ xorVA : ∀ { _~~>_ } -> (VArrow _~~>_) → (Vec Bool 2) ~~> (Vec Bool 1)
 xorVA arrow = arr xorV
   where open VArrow arrow
 
--- But: Its not really polymorph, is it?
+-- But: Since the VArrow-parameter has to be explicit, it's not fully polymorphic in ~~>, is it?
 crc_poly_ccit₁ : ∀ {_~~>_} -> (VArrow _~~>_) → Vec Bool 5 ~~> Vec Bool 4
 crc_poly_ccit₁ arrow =  arr (shift 0 2) 
                      ⋙ arr (dup 2) 
