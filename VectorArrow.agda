@@ -2,27 +2,26 @@ module VectorArrow where
 
 open import Data.List using (List; _∷_; map; zipWith)
 open import Data.Nat using (ℕ; zero; suc;  _+_; _*_) 
+open import Relation.Binary.PropositionalEquality
+--open ≡-Reasoning
 
-data _==_ {A : Set}(x : A) : A → Set where 
-  refl : x == x
-
-lem-plus-zero : (n : ℕ) → (n + zero) == n
+lem-plus-zero : (n : ℕ) → (n + zero) ≡ n
 lem-plus-zero zero = refl
 lem-plus-zero (suc n) with n + zero | lem-plus-zero n
 ... | .n | refl = refl
 
-lem-help : (n m : ℕ) → (suc n + m) == (n + suc m)
+lem-help : (n m : ℕ) → (suc n + m) ≡ (n + suc m)
 lem-help zero m = refl
 lem-help (suc n) m with suc n + m |  lem-help n m 
 ... | .(n + suc m) | refl = refl
 
-lem-plus-assoc : (n m : ℕ) → (n + m) == (m + n)
+lem-plus-assoc : (n m : ℕ) → (n + m) ≡ (m + n)
 lem-plus-assoc n zero with n + zero | lem-plus-zero n 
 ... | .n | refl =  refl
 lem-plus-assoc n (suc m) with n + suc m    | lem-help n m | m + n    | lem-plus-assoc n m 
-...                        | . (suc n + m) | refl         | .(n + m) | refl               = refl
+...                        | .(suc n + m) | refl         | .(n + m) | refl               = refl
 
--- n + suc m == suc n + m == (_+_) suc (n + m) == (IH) suc (m + n) == (_+_) suc m + n
+-- Since: n + suc m ≡ suc n + m ≡ (_+_) suc (n + m) ≡ (IH) suc (m + n) ≡ (_+_) suc m + n
 
 data Bool : Set where
   true : Bool
@@ -90,9 +89,6 @@ swap {_} {_} {n} xs = drop n xs ++ take n xs
 -- splitM {_} {suc _} {_} xs with splitM (heads xs) 
 -- ... | ( ys , zs ) = ( last xs ∷ ys , zs )
 
---_o_ : {A C : Set}{B : A → Set}{C : (x : A) → (B x) → Set} → (f : {x : A}(y : B x) → C x y) → (g : (x : A) → B x) → (x : A) → C x (g x) 
---_o_ f g x = f (g x)
-
 _◦_ : {A C : Set}{B : A → Set} → ({x : A} → B x → C) → ( (x : A) → B x) → (A → C)
 _◦_ f g x = f (g x)
 
@@ -106,17 +102,35 @@ seconds : ∀ {A n m} (k : ℕ) → (Vec A n => Vec A m) → Vec A (k + n) => Ve
 seconds k f xs with split {_} {_} {k} xs
 ... | ( ys , zs ) = ys ++ (f zs)
 
--- seconds2 : ∀ {A n m k} → (Vec A n → Vec A m) → Vec A (k + n) → Vec A (k + m)
--- seconds2 {A} {n} {m} {k} f xs with 
+-- lem-help₂ : (n m : ℕ) → (suc n + m) == (n + suc m)
 
-reverseV : ∀ {A n} → Vec A n → Vec A n
-reverseV [] = []
-reverseV {A} {suc n} (x ∷ xs) with (n + suc zero) | lem-plus-assoc n (suc zero) 
-... | .(suc zero + n) | refl = {!!}
+foldl : ∀ {m} {A : Set} (B : ℕ → Set) →
+        (∀ {n} → B n → A → B (suc n)) →
+        B zero →
+        Vec A m → B m
+foldl b _⊕_ n []       = n
+foldl b _⊕_ n (x ∷ xs) = foldl (λ n → b (suc n)) _⊕_ (n ⊕ x) xs
+
+reverse : ∀ {A}{n : ℕ} → Vec A n → Vec A n
+reverse {A = A} = foldl (Vec A) (λ rev x → x ∷ rev) []
+
+-- "commutative" reverse functions
+reverse2 : ∀ {A}{n k : ℕ} → Vec A (n + k) → Vec A (k + n)
+reverse2 {_} {n} {_} xs = reverse (drop n xs) ++ reverse (take n xs)
+
+reverse3 : ∀ {A}{n k : ℕ} → Vec A (k + n) → Vec A (n + k)
+reverse3 {_} {n} {k} xs rewrite lem-plus-assoc n k = reverse xs
 
 firsts : ∀ {A n m k} → (Vec A n => Vec A m) → Vec A (n + k) => Vec A (m + k)
 firsts f xs with split xs
 ... | ( ys , zs ) = f ys ++ zs
+
+seconds2 : ∀ {A}{n m k : ℕ} → (Vec A n → Vec A m) → Vec A (k + n) → Vec A (k + m)
+seconds2 {A} {n} {m} {k} f xs rewrite lem-plus-assoc n k | lem-plus-assoc m k = {!!}
+-- reverse2 (f (take n (reverse3 xs)) ++ drop n (reverse3 xs))
+--    where xs' = reverse3 xs
+--          ns = take n xs'
+--          ks = drop n xs' 
 
 change2 : {A : Set} → Vec A 2 → Vec A 2
 change2 ( x ∷ y ∷ [] ) = (y ∷ x ∷ [] )
