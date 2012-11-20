@@ -27,6 +27,13 @@ data Bool : Set where
   true : Bool
   false : Bool
 
+-- _-_ : ℕ → 
+
+_-_ : ℕ → ℕ → ℕ 
+j - zero = j
+zero - (suc _) = zero
+(suc i) - (suc j) = i - j
+
 --_+_ : ℕ → ℕ → ℕ
 --zero + j  = j
 --suc i + j = suc (i + j)
@@ -37,6 +44,7 @@ data Bool : Set where
 
 data _×_ (A B : Set) : Set where 
   _,_  : A → B → A × B
+
 
 fst : ∀ {A B} → A × B → A
 fst (x , y) = x
@@ -50,6 +58,11 @@ data Vec (A : Set) : ℕ → Set where
  
 infixr 5 _∷_
 
+split2 : ∀ {A}{n k : ℕ} → n ≲ k → Vec A k → Vec A n × Vec A (k - n)
+split2 {_} {_} {zero} []  = ([] , [])
+split2 {_} {n} {suc k} (x ∷ xs) with (split2 {_} {n} {k} xs)
+... |  (xs1 , ys1) = ? 
+
 _++_ : {A : Set}{n m : ℕ} → Vec A n → Vec A m → Vec A (n + m)
 [] ++ ys        = ys
 (x ∷ xs) ++ ys = x ∷ (xs ++ ys)
@@ -60,7 +73,7 @@ split {_} {_} {suc _} (x ∷ xs) with split xs
 ... | ( ys , zs ) = ( (x ∷ ys) , zs )
 
 -- All Elements but the last
-heads : ∀ {A n} → Vec A (1 + n) → Vec  A n
+heads : ∀ {A n} → Vec A (1 + n) → Vec A n
 heads (x ∷ []) = []
 heads (x ∷ y ∷ xs) = x ∷ (heads (y ∷ xs))
 
@@ -68,20 +81,20 @@ last : ∀ {A n} → Vec A (1 + n) → A
 last (x ∷ []) = x
 last (x ∷ y ∷ xs) = last (y ∷ xs)
 
-take : ∀ {A m} (n : ℕ) → Vec A (n + m) → Vec A n
-take zero    xs        = []
-take (suc i) (x ∷ xs) = x ∷ (take i xs)
+take : ∀ {A}{m : ℕ}{n : ℕ} → Vec A (n + m) → Vec A n
+take {_} {_} {zero}    xs        = []
+take {_} {_} {suc i} (x ∷ xs) = x ∷ (take {n = i} xs)
 
-drop : ∀ {A m} (n : ℕ) → Vec A (n + m) → Vec A m
-drop zero    xs        = xs
-drop (suc i) (x ∷ xs) = drop i xs
+drop : ∀ {A}{m : ℕ}{n : ℕ} → Vec A (n + m) → Vec A m
+drop {_} {_} {zero}    xs        = xs
+drop {_} {_} {suc i} (x ∷ xs) = drop {n = i} xs
 
 concat : ∀ {A n m} → Vec (Vec A n) m → Vec A (m * n)
 concat [] = []
 concat (xs ∷ xss) = xs ++ (concat xss)
 
 swap : ∀ {A m n} → Vec A (n + m) → Vec A (m + n)
-swap {_} {_} {n} xs = drop n xs ++ take n xs
+swap {_} {_} {n} xs = drop {n = n} xs ++ take {n = n} xs
 
 -- yields same result as split BUT calculates it from the back
 -- splitM : {A : Set}{m n : ℕ} → Vec A (n + m) → (Vec A m) x (Vec A n) 
@@ -116,7 +129,7 @@ reverse {A = A} = foldl (Vec A) (λ rev x → x ∷ rev) []
 
 -- "commutative" reverse functions
 reverse2 : ∀ {A}{n k : ℕ} → Vec A (n + k) → Vec A (k + n)
-reverse2 {_} {n} {_} xs = reverse (drop n xs) ++ reverse (take n xs)
+reverse2 {_} {n} {_} xs = reverse (drop {n = n} xs) ++ reverse (take {n = n} xs)
 
 reverse3 : ∀ {A}{n k : ℕ} → Vec A (k + n) → Vec A (n + k)
 reverse3 {_} {n} {k} xs rewrite lem-plus-assoc n k = reverse xs
@@ -126,11 +139,15 @@ firsts f xs with split xs
 ... | ( ys , zs ) = f ys ++ zs
 
 seconds2 : ∀ {A}{n m k : ℕ} → (Vec A n → Vec A m) → Vec A (k + n) → Vec A (k + m)
-seconds2 {A} {n} {m} {k} f xs rewrite lem-plus-assoc n k | lem-plus-assoc m k = {!!}
--- reverse2 (f (take n (reverse3 xs)) ++ drop n (reverse3 xs))
---    where xs' = reverse3 xs
+seconds2 {A} {n} {m} {k} f xs rewrite lem-plus-assoc n k | lem-plus-assoc k n | lem-plus-assoc k m | lem-plus-assoc m k = reverse (drop {n = n} (reverse xs))  ++ f (reverse (take {n = n} (reverse xs)))
+--    where xs' = reverse3 {_} {_} {k} xs
+--          k' = length xs - n
 --          ns = take n xs'
 --          ks = drop n xs' 
+
+-- seconds3 : ∀ {A}{n m k : ℕ} → (Vec A n → Vec A m) → Vec A (n + k) → Vec A (m + k)
+--seconds3 {_} {n} {m} {_} f xs = reverse (drop {n = n} (reverse xs)) ++ ?
+-- reverse (drop {n = n} (reverse xs)) ++ f (reverse (take {n = n} (reverse xs)))
 
 change2 : {A : Set} → Vec A 2 → Vec A 2
 change2 ( x ∷ y ∷ [] ) = (y ∷ x ∷ [] )
@@ -179,7 +196,7 @@ crc_poly_ccit : Vec Bool 5 → Vec Bool 4
 crc_poly_ccit = shift 0 2 >>> 
                 dup 2     >>> 
                 shift 3 1 >>> 
-                seconds 2 (xorV *** 
+                seconds 2  (xorV *** 
                            xorV
                           )
 
