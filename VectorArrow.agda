@@ -15,10 +15,10 @@ lem-help zero m = refl
 lem-help (suc n) m with suc n + m |  lem-help n m 
 ... | .(n + suc m) | refl = refl
 
-lem-plus-assoc : (n m : ℕ) → (n + m) ≡ (m + n)
-lem-plus-assoc n zero with n + zero | lem-plus-zero n 
+lem-plus-comm : (n m : ℕ) → (n + m) ≡ (m + n)
+lem-plus-comm n zero with n + zero | lem-plus-zero n 
 ... | .n | refl =  refl
-lem-plus-assoc n (suc m) with n + suc m    | lem-help n m | m + n    | lem-plus-assoc n m 
+lem-plus-comm n (suc m) with n + suc m    | lem-help n m | m + n    | lem-plus-comm n m 
 ...                        | .(suc n + m) | refl         | .(n + m) | refl               = refl
 
 -- Since: n + suc m ≡ suc n + m ≡ (_+_) suc (n + m) ≡ (IH) suc (m + n) ≡ (_+_) suc m + n
@@ -58,10 +58,10 @@ data Vec (A : Set) : ℕ → Set where
  
 infixr 5 _∷_
 
-split2 : ∀ {A}{n k : ℕ} → n ≲ k → Vec A k → Vec A n × Vec A (k - n)
-split2 {_} {_} {zero} []  = ([] , [])
-split2 {_} {n} {suc k} (x ∷ xs) with (split2 {_} {n} {k} xs)
-... |  (xs1 , ys1) = ? 
+--split2 : ∀ {A}{n k : ℕ} → n ≲ k → Vec A k → Vec A n × Vec A (k - n)
+--split2 {_} {_} {zero} []  = ([] , [])
+--split2 {_} {n} {suc k} (x ∷ xs) with (split2 {_} {n} {k} xs)
+--... |  (xs1 , ys1) = ? 
 
 _++_ : {A : Set}{n m : ℕ} → Vec A n → Vec A m → Vec A (n + m)
 [] ++ ys        = ys
@@ -115,6 +115,9 @@ seconds : ∀ {A n m} (k : ℕ) → (Vec A n => Vec A m) → Vec A (k + n) => Ve
 seconds k f xs with split {_} {_} {k} xs
 ... | ( ys , zs ) = ys ++ (f zs)
 
+seconds3 : ∀ {A} {n m k : ℕ} → (Vec A n → Vec A m) → Vec A (n + k) → Vec A (m + k)
+seconds3 {A} {n} {m} {k} f xs rewrite lem-plus-comm n k | lem-plus-comm m k = seconds k f xs
+
 -- lem-help₂ : (n m : ℕ) → (suc n + m) == (n + suc m)
 
 foldl : ∀ {m} {A : Set} (B : ℕ → Set) →
@@ -132,22 +135,14 @@ reverse2 : ∀ {A}{n k : ℕ} → Vec A (n + k) → Vec A (k + n)
 reverse2 {_} {n} {_} xs = reverse (drop {n = n} xs) ++ reverse (take {n = n} xs)
 
 reverse3 : ∀ {A}{n k : ℕ} → Vec A (k + n) → Vec A (n + k)
-reverse3 {_} {n} {k} xs rewrite lem-plus-assoc n k = reverse xs
+reverse3 {_} {n} {k} xs rewrite lem-plus-comm n k = reverse xs
 
 firsts : ∀ {A n m k} → (Vec A n => Vec A m) → Vec A (n + k) => Vec A (m + k)
 firsts f xs with split xs
 ... | ( ys , zs ) = f ys ++ zs
 
 seconds2 : ∀ {A}{n m k : ℕ} → (Vec A n → Vec A m) → Vec A (k + n) → Vec A (k + m)
-seconds2 {A} {n} {m} {k} f xs rewrite lem-plus-assoc n k | lem-plus-assoc k n | lem-plus-assoc k m | lem-plus-assoc m k = reverse (drop {n = n} (reverse xs))  ++ f (reverse (take {n = n} (reverse xs)))
---    where xs' = reverse3 {_} {_} {k} xs
---          k' = length xs - n
---          ns = take n xs'
---          ks = drop n xs' 
-
--- seconds3 : ∀ {A}{n m k : ℕ} → (Vec A n → Vec A m) → Vec A (n + k) → Vec A (m + k)
---seconds3 {_} {n} {m} {_} f xs = reverse (drop {n = n} (reverse xs)) ++ ?
--- reverse (drop {n = n} (reverse xs)) ++ f (reverse (take {n = n} (reverse xs)))
+seconds2 {A} {n} {m} {k} f xs rewrite lem-plus-comm n k | lem-plus-comm k n | lem-plus-comm k m | lem-plus-comm m k = reverse (drop {n = n} (reverse xs))  ++ f (reverse (take {n = n} (reverse xs)))
 
 change2 : {A : Set} → Vec A 2 → Vec A 2
 change2 ( x ∷ y ∷ [] ) = (y ∷ x ∷ [] )
@@ -157,6 +152,9 @@ change3 ( x ∷ y ∷ z ∷ [] ) = (y ∷ x ∷ z ∷ [] )
 
 changeN : {A : Set}{n : ℕ} → Vec A (2 + n) → Vec A (2 + n)
 changeN = firsts change2
+
+changeNpost : {A : Set}{n : ℕ} → Vec A (2 + n) → Vec A (2 + n)
+changeNpost = seconds3 change2
 
 change3' : {A : Set} → Vec A 3 → Vec A 3
 change3' = changeN {_} {1}
@@ -196,7 +194,7 @@ crc_poly_ccit : Vec Bool 5 → Vec Bool 4
 crc_poly_ccit = shift 0 2 >>> 
                 dup 2     >>> 
                 shift 3 1 >>> 
-                seconds 2  (xorV *** 
+                seconds3  (xorV *** 
                            xorV
                           )
 
