@@ -58,11 +58,6 @@ data Vec (A : Set) : ℕ → Set where
  
 infixr 5 _∷_
 
---split2 : ∀ {A}{n k : ℕ} → n ≲ k → Vec A k → Vec A n × Vec A (k - n)
---split2 {_} {_} {zero} []  = ([] , [])
---split2 {_} {n} {suc k} (x ∷ xs) with (split2 {_} {n} {k} xs)
---... |  (xs1 , ys1) = ? 
-
 _++_ : {A : Set}{n m : ℕ} → Vec A n → Vec A m → Vec A (n + m)
 [] ++ ys        = ys
 (x ∷ xs) ++ ys = x ∷ (xs ++ ys)
@@ -111,12 +106,24 @@ A => B = A → B
 _⇒S⇒_ : Set → Set → Set
 A ⇒S⇒ B = List A → List B
 
+
+
 seconds : ∀ {A n m} (k : ℕ) → (Vec A n => Vec A m) → Vec A (k + n) => Vec A (k + m)
 seconds k f xs with split {_} {_} {k} xs
 ... | ( ys , zs ) = ys ++ (f zs)
 
 seconds3 : ∀ {A} {n m k : ℕ} → (Vec A n → Vec A m) → Vec A (n + k) → Vec A (m + k)
 seconds3 {A} {n} {m} {k} f xs rewrite lem-plus-comm n k | lem-plus-comm m k = seconds k f xs
+
+firsts : ∀ {A n m k} → (Vec A n => Vec A m) → Vec A (n + k) => Vec A (m + k)
+firsts f xs with split xs
+... | ( ys , zs ) = f ys ++ zs
+
+_>>>_ : {A B C : Set} → (A → B) → (B → C) → (A → C)
+_>>>_ g f x = f (g x)
+
+-- _***₂_ : ∀ {A} {n m k j : ℕ} → (Vec A n → Vec A m) → (Vec A k → Vec A j) → Vec A (n + k) → Vec A (m + j)
+-- _***₂_ {A} {n} {m} {k} {j} f g xs rewrite lem-plus-comm m k | lem-plus-comm m k  = firsts f >>> seconds3 g
 
 -- lem-help₂ : (n m : ℕ) → (suc n + m) == (n + suc m)
 
@@ -137,9 +144,6 @@ reverse2 {_} {n} {_} xs = reverse (drop {n = n} xs) ++ reverse (take {n = n} xs)
 reverse3 : ∀ {A}{n k : ℕ} → Vec A (k + n) → Vec A (n + k)
 reverse3 {_} {n} {k} xs rewrite lem-plus-comm n k = reverse xs
 
-firsts : ∀ {A n m k} → (Vec A n => Vec A m) → Vec A (n + k) => Vec A (m + k)
-firsts f xs with split xs
-... | ( ys , zs ) = f ys ++ zs
 
 seconds2 : ∀ {A}{n m k : ℕ} → (Vec A n → Vec A m) → Vec A (k + n) → Vec A (k + m)
 seconds2 {A} {n} {m} {k} f xs rewrite lem-plus-comm n k | lem-plus-comm k n | lem-plus-comm k m | lem-plus-comm m k = reverse (drop {n = n} (reverse xs))  ++ f (reverse (take {n = n} (reverse xs)))
@@ -171,9 +175,6 @@ _***_ f g xs with split xs
 
 _&&&_ : {A : Set}{n m k : ℕ} → (Vec A n → Vec A m) → (Vec A n → Vec A k) → Vec A n → Vec A (m + k)
 _&&&_ f g xs = f xs ++ g xs
-
-_>>>_ : {A B C : Set} → (A → B) → (B → C) → (A → C)
-_>>>_ g f x = f (g x)
 
 infixr 6 _>>>_ 
 
@@ -232,6 +233,8 @@ record VArrow (_~~>_ : Set → Set → Set) : Set₁ where
     _&₃_ : ∀ {B n m k}      → Vec B n ~~> Vec B m → Vec B n ~~> Vec B k → Vec B n ~~> Vec B (m + k) 
   infixr 2 _⋙_
 
+data Grid (A : Set → Set → Set) : Set₁ where
+  GR : ∀ {B C} →  ( A B C ) × ℕ  → Grid A
 
 -- The Stream-Arrow Combinators
 arrL : ∀ {B n m} → (Vec B n → Vec B m) → Vec B n ⇒S⇒ Vec B m
